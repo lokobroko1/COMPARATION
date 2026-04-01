@@ -15,7 +15,13 @@ Output: size_comparison_3d.mp4
 # ---------------------------------------------------------------------------
 # Section 1: IMPORTS
 # ---------------------------------------------------------------------------
-import subprocess, sys, os, shutil, math, time, gc
+import subprocess
+import sys
+import os
+import shutil
+import math
+import time
+import gc
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import imageio
@@ -43,6 +49,16 @@ F_APPEAR = int(SEC_APPEAR * FPS_RENDER)
 F_HOLD = int(SEC_HOLD * FPS_RENDER)
 F_TRANSITION = int(SEC_TRANSITION * FPS_RENDER)
 F_PER_OBJ = F_APPEAR + F_HOLD + F_TRANSITION
+
+# Raymarching constants (tunable here alongside the other render settings)
+# MAX_STEPS: sphere-marching iteration budget. Higher = more accurate at complex geometry;
+#            lower = faster renders. 80 is a good balance for unit-scale SDF scenes.
+MAX_STEPS = 80
+# MAX_DIST: rays that travel beyond this distance are considered misses (background).
+MAX_DIST = 20.0
+# SURF_DIST: a ray is considered to have hit a surface when d(p) < SURF_DIST.
+#            Too small → slow convergence; too large → fat surfaces / missed thin details.
+SURF_DIST = 0.002
 
 # ---------------------------------------------------------------------------
 # Section 3: OBJECT DATA
@@ -1140,15 +1156,6 @@ def sdf_observable_universe(p, t):
 # ---------------------------------------------------------------------------
 # Section 8: RAYMARCHING ENGINE
 # ---------------------------------------------------------------------------
-
-# MAX_STEPS: sphere-marching iteration budget. Higher = more accurate at complex geometry;
-#            lower = faster renders. 80 is a good balance for unit-scale SDF scenes.
-MAX_STEPS = 80
-# MAX_DIST: rays that travel beyond this distance are considered misses (background).
-MAX_DIST = 20.0
-# SURF_DIST: a ray is considered to have hit a surface when d(p) < SURF_DIST.
-#            Too small → slow convergence; too large → fat surfaces / missed thin details.
-SURF_DIST = 0.002
 
 
 def raymarch(ray_origins, ray_dirs, sdf_func, t_anim):
